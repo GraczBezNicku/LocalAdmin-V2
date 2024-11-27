@@ -50,7 +50,7 @@
     </ItemGroup>
 
     <PropertyGroup>
-        <PublishAot>true</PublishAot>
+        <PublishAot>false</PublishAot>
     </PropertyGroup>
     
     <ItemGroup>

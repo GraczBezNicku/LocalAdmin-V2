@@ -70,6 +70,15 @@ public class TcpServer
 
                 Task.Run(async () =>
                 {
+                    while (true)
+                    {
+                        await Task.Delay(5000);
+                        WriteLine("SL_BROKEN_PIPE_HEARTBEAT");
+                    }
+                });
+
+                Task.Run(async () =>
+                {
                     const int offset = sizeof(int);
                     var codeBuffer = new byte[1];
                     var lengthBuffer = new byte[offset];
