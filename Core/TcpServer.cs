@@ -207,24 +207,32 @@ public class TcpServer
     {
         lock (_lck)
         {
-            if (_exit) return;
-            const int offset = sizeof(int);
-
-            var buffer = ArrayPool<byte>.Shared.Rent(Encoding.UTF8.GetMaxByteCount(input.Length) + offset);
-
-            var length = _encoding.GetBytes(input, 0, input.Length, buffer, offset);
-
-            if (length + offset > _txBuffer)
+            try
             {
-                ConsoleUtil.WriteLine("Failed to send command - configured LA to SL buffer size is too small. Please increase it in the LocalAdmin config file to run this command!", ConsoleColor.Red);
+                if (_exit) return;
+                const int offset = sizeof(int);
+
+                var buffer = ArrayPool<byte>.Shared.Rent(Encoding.UTF8.GetMaxByteCount(input.Length) + offset);
+
+                var length = _encoding.GetBytes(input, 0, input.Length, buffer, offset);
+
+                if (length + offset > _txBuffer)
+                {
+                    ConsoleUtil.WriteLine("Failed to send command - configured LA to SL buffer size is too small. Please increase it in the LocalAdmin config file to run this command!", ConsoleColor.Red);
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    return;
+                }
+
+                MemoryMarshal.Cast<byte, int>(buffer)[0] = length;
+
+                _networkStream!.Write(buffer, 0, length + offset);
                 ArrayPool<byte>.Shared.Return(buffer);
-                return;
             }
-
-            MemoryMarshal.Cast<byte, int>(buffer)[0] = length;
-
-            _networkStream!.Write(buffer, 0, length + offset);
-            ArrayPool<byte>.Shared.Return(buffer);
+            catch (Exception ex)
+            {
+                ConsoleUtil.WriteLine($"Failed to execute TcpServer::WriteLine()!\n{ex}\nEmergency restart in progress...", ConsoleColor.DarkRed);
+                LocalAdmin.Singleton?.Exit(0, false, true);
+            }
         }
     }
 }
